@@ -3,15 +3,5 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm install --legacy-peer-deps",
-  "devCommand": "npm run dev",
-  "functions": {
-    "app/api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  }
+  "devCommand": "npm run dev"
 }
