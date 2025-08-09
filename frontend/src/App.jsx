@@ -180,7 +180,7 @@ function App() {
   const dragStartWidth = useRef(0);
 
   // Transaction animation speed (ms)
-  const [txSpeed, setTxSpeed] = useState(1200); // default 1200ms
+  const [txSpeed, setTxSpeed] = useState(100); // default 100ms (super fast)
 
   // Draggable slider position
   const [sliderPos, setSliderPos] = useState({ x: window.innerWidth / 2 - 200, y: window.innerHeight - 100 });
