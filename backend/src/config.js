@@ -5,7 +5,7 @@ const config = {
   port: process.env.PORT || 3001,
   
   // Ethereum configuration
-  infuraApiKey: process.env.INFURA_API_KEY,
+  infuraApiKeys: process.env.INFURA_API_KEYS ? process.env.INFURA_API_KEYS.split(',') : [process.env.INFURA_API_KEY],
   network: process.env.ETHEREUM_NETWORK || 'mainnet',
   
   // Transaction processing configuration
@@ -35,8 +35,8 @@ const config = {
 function validateConfig() {
   const errors = [];
   
-  if (!config.infuraApiKey) {
-    errors.push('INFURA_API_KEY is required');
+  if (!config.infuraApiKeys || config.infuraApiKeys.length === 0 || config.infuraApiKeys[0] === undefined) {
+    errors.push('INFURA_API_KEY or INFURA_API_KEYS is required');
   }
   
   if (!config.encryptionKey || config.encryptionKey.length < 32) {

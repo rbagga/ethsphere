@@ -4,11 +4,63 @@ const config = require('./config');
 class BlockchainService {
   constructor(database) {
     this.database = database;
-    this.provider = new ethers.providers.InfuraProvider(config.network, config.infuraApiKey);
+    
+    // API key rotation setup
+    this.apiKeys = config.infuraApiKeys;
+    this.currentKeyIndex = 0;
+    this.provider = new ethers.providers.InfuraProvider(config.network, this.apiKeys[this.currentKeyIndex]);
     
     // Transaction stack (for backward compatibility)
     this.pendingStack = [];
     this.fetchingEnabled = true;
+    
+    console.log(`Initialized with ${this.apiKeys.length} Infura API key(s)`);
+  }
+
+  // Rotate to the next API key
+  rotateApiKey() {
+    if (this.apiKeys.length <= 1) {
+      console.warn('Only one API key available, cannot rotate');
+      return false;
+    }
+    
+    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+    const newApiKey = this.apiKeys[this.currentKeyIndex];
+    this.provider = new ethers.providers.InfuraProvider(config.network, newApiKey);
+    
+    console.log(`Rotated to API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}`);
+    return true;
+  }
+
+  // Execute a provider method with automatic retry and key rotation
+  async executeWithRetry(method, ...args) {
+    const maxRetries = this.apiKeys.length;
+    let lastError;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await this.provider[method](...args);
+      } catch (error) {
+        lastError = error;
+        
+        // Check if error is rate limit related
+        const isRateLimitError = error.message?.includes('rate limit') || 
+                               error.message?.includes('429') ||
+                               error.code === 429 ||
+                               error.status === 429;
+        
+        if (isRateLimitError && attempt < maxRetries - 1) {
+          console.warn(`Rate limit hit on API key ${this.currentKeyIndex + 1}/${this.apiKeys.length}, rotating...`);
+          this.rotateApiKey();
+          // Brief delay before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          throw error;
+        }
+      }
+    }
+    
+    throw lastError;
   }
 
   // Add transactions to stack and database
@@ -53,8 +105,8 @@ class BlockchainService {
     if (!this.fetchingEnabled) return;
     
     try {
-      const blockNumber = await this.provider.getBlockNumber();
-      const block = await this.provider.getBlockWithTransactions(blockNumber);
+      const blockNumber = await this.executeWithRetry('getBlockNumber');
+      const block = await this.executeWithRetry('getBlockWithTransactions', blockNumber);
       
       if (block && block.transactions && block.transactions.length > 0) {
         await this.addToStack(block.transactions);
@@ -85,7 +137,7 @@ class BlockchainService {
   // Get transaction details by hash
   async getTransaction(hash) {
     try {
-      return await this.provider.getTransaction(hash);
+      return await this.executeWithRetry('getTransaction', hash);
     } catch (error) {
       throw new Error(`Failed to fetch transaction: ${error.message}`);
     }
@@ -94,7 +146,7 @@ class BlockchainService {
   // Get ETH balance for address
   async getBalance(address) {
     try {
-      const balance = await this.provider.getBalance(address);
+      const balance = await this.executeWithRetry('getBalance', address);
       return balance.toString();
     } catch (error) {
       throw new Error(`Failed to fetch balance: ${error.message}`);
