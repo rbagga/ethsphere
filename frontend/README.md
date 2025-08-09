@@ -1,4 +1,6 @@
-# React + Vite
+# Ethsphere Frontend
+
+React + Vite frontend for the Ethereum Transaction Visualizer with 3D visualization and AI-powered SQL queries.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
