@@ -150,6 +150,14 @@ function App() {
   const [selectedAddress, setSelectedAddress] = useState(null) // NEW: selected address for filtering
   const queueRef = useRef([])
 
+  // Mobile detection and responsive state
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   // Lock to ensure only one transaction is processed at a time
   const processingRef = useRef(false);
   // Buffer for new transactions fetched during animation
@@ -789,26 +797,27 @@ function App() {
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#111', flexDirection: 'row' }}>
-      {/* Sidebar */}
-      <div
-        style={{
-          width: sidebarCollapsed ? 36 : sidebarWidth,
-          minWidth: sidebarCollapsed ? 36 : minSidebarWidth,
-          maxWidth: sidebarCollapsed ? 36 : maxSidebarWidth,
-          background: '#181818',
-          color: '#fff',
-          borderRight: '1px solid #222',
-          transition: 'width 0.25s cubic-bezier(.4,2,.6,1)',
-          position: 'relative',
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: sidebarCollapsed ? 'center' : 'stretch',
-          userSelect: dragging.current ? 'none' : 'auto',
-          height: '100vh',
-          zIndex: 10,
-        }}
-      >
+      {/* Sidebar - Hidden on mobile */}
+      {!isMobile && (
+        <div
+          style={{
+            width: sidebarCollapsed ? 36 : sidebarWidth,
+            minWidth: sidebarCollapsed ? 36 : minSidebarWidth,
+            maxWidth: sidebarCollapsed ? 36 : maxSidebarWidth,
+            background: '#181818',
+            color: '#fff',
+            borderRight: '1px solid #222',
+            transition: 'width 0.25s cubic-bezier(.4,2,.6,1)',
+            position: 'relative',
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: sidebarCollapsed ? 'center' : 'stretch',
+            userSelect: dragging.current ? 'none' : 'auto',
+            height: '100vh',
+            zIndex: 10,
+          }}
+        >
         <button
           style={{
             position: 'absolute',
@@ -902,19 +911,20 @@ function App() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
       {/* Main content area (sphere, overlays, etc.) */}
       <div style={{ flex: 1, position: 'relative', height: '100vh', overflow: 'hidden' }}>
         {/* Top-right overlay for counts and query button */}
         <div
           style={{
             position: 'fixed',
-            top: 18,
-            right: 24,
+            top: isMobile ? 12 : 18,
+            right: isMobile ? 12 : 24,
             zIndex: 3000,
             display: 'flex',
             flexDirection: 'column',
-            gap: 12,
+            gap: isMobile ? 8 : 12,
             alignItems: 'flex-end',
           }}
         >
@@ -922,13 +932,13 @@ function App() {
             style={{
               background: 'rgba(24,24,24,0.92)',
               color: '#4fd1c5',
-              padding: '12px 22px',
+              padding: isMobile ? '8px 12px' : '12px 22px',
               borderRadius: 10,
-              fontSize: 16,
+              fontSize: isMobile ? 12 : 16,
               fontWeight: 600,
               boxShadow: '0 2px 12px #000a',
               letterSpacing: 0.2,
-              minWidth: 120,
+              minWidth: isMobile ? 80 : 120,
               textAlign: 'right',
               pointerEvents: 'none',
             }}
@@ -936,52 +946,54 @@ function App() {
             <div>Addresses: {points.length}</div>
             <div>Transactions: {visualized.length}</div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: isMobile ? 6 : 8, flexDirection: isMobile ? 'column' : 'row' }}>
             <button
               style={{
                 background: authPanelVisible ? '#ff6b6b' : 'rgba(24,24,24,0.92)',
                 color: authPanelVisible ? '#fff' : selectedProvider && apiKeys[selectedProvider] ? '#4fd1c5' : '#ffa500',
                 border: authPanelVisible ? 'none' : selectedProvider && apiKeys[selectedProvider] ? '1px solid #4fd1c5' : '1px solid #ffa500',
-                padding: '8px 16px',
+                padding: isMobile ? '6px 12px' : '8px 16px',
                 borderRadius: 8,
-                fontSize: 14,
+                fontSize: isMobile ? 12 : 14,
                 fontWeight: 600,
                 cursor: 'pointer',
                 boxShadow: '0 2px 12px #000a',
                 transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
               }}
               onClick={() => setAuthPanelVisible(!authPanelVisible)}
             >
-              {authPanelVisible ? '✕ Close AI' : selectedProvider && apiKeys[selectedProvider] ? `🤖 ${providers[selectedProvider]?.name}` : '🔑 Setup AI'}
+              {authPanelVisible ? '✕ Close AI' : selectedProvider && apiKeys[selectedProvider] ? `🤖 ${isMobile ? 'AI' : providers[selectedProvider]?.name}` : '🔑 Setup AI'}
             </button>
             <button
               style={{
                 background: queryPanelVisible ? '#4fd1c5' : 'rgba(24,24,24,0.92)',
                 color: queryPanelVisible ? '#000' : '#4fd1c5',
                 border: queryPanelVisible ? 'none' : '1px solid #4fd1c5',
-                padding: '8px 16px',
+                padding: isMobile ? '6px 12px' : '8px 16px',
                 borderRadius: 8,
-                fontSize: 14,
+                fontSize: isMobile ? 12 : 14,
                 fontWeight: 600,
                 cursor: 'pointer',
                 boxShadow: '0 2px 12px #000a',
                 transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
               }}
               onClick={() => setQueryPanelVisible(!queryPanelVisible)}
             >
-              {queryPanelVisible ? '✕ Close Query' : '⚡ SQL Query'}
+              {queryPanelVisible ? '✕ Close' : '⚡ SQL'}
             </button>
           </div>
         </div>
-        {/* Top-left logo/image overlay, to the right of the sidebar */}
+        {/* Top-left logo/image overlay, responsive positioning */}
         <img
           src={"/logo.png"}
           alt="Logo"
           style={{
             position: 'fixed',
             top: 16,
-            left: (sidebarCollapsed ? 36 : sidebarWidth) + 16,
-            height: 200,
+            left: isMobile ? 16 : (sidebarCollapsed ? 36 : sidebarWidth) + 16,
+            height: isMobile ? 120 : 200,
             width: 'auto',
             zIndex: 2000,
             pointerEvents: 'none',
@@ -1218,7 +1230,8 @@ function App() {
             </div>
           </div>
         )}
-        {/* Transaction speed slider at bottom center of page, fixed and draggable */}
+        {/* Transaction speed slider at bottom center of page, fixed and draggable - Hidden on mobile */}
+        {!isMobile && (
         <div
           style={{
             position: 'fixed',
@@ -1265,7 +1278,9 @@ function App() {
             <span style={{ fontSize: 12, color: '#4fd1c5', minWidth: 48, textAlign: 'right' }}>{txSpeed} ms</span>
           </div>
         </div>
-        {/* Piano widget, draggable */}
+        )}
+        {/* Piano widget, draggable - Hidden on mobile */}
+        {!isMobile && (
         <div
           style={{
             position: 'fixed',
@@ -1329,6 +1344,7 @@ function App() {
             );
           })}
         </div>
+        )}
 
         {/* AI Authentication Panel */}
         {authPanelVisible && (
@@ -1656,36 +1672,39 @@ function App() {
             style={{
               position: 'fixed',
               bottom: 0,
-              left: sidebarCollapsed ? 36 : sidebarWidth,
+              left: isMobile ? 0 : (sidebarCollapsed ? 36 : sidebarWidth),
               right: 0,
-              height: queryPanelHeight,
+              top: isMobile ? 0 : 'auto',
+              height: isMobile ? '100vh' : queryPanelHeight,
               background: '#181818',
-              borderTop: '2px solid #4fd1c5',
-              zIndex: 2000,
+              borderTop: isMobile ? 'none' : '2px solid #4fd1c5',
+              zIndex: isMobile ? 4000 : 2000,
               transition: 'left 0.25s cubic-bezier(.4,2,.6,1)',
               display: 'flex',
               flexDirection: 'column',
             }}
           >
-            {/* Vertical Resize Handle */}
-            <div
-              style={{
-                position: 'absolute',
-                top: -4,
-                left: 0,
-                right: 0,
-                height: 8,
-                cursor: 'ns-resize',
-                background: 'linear-gradient(to bottom, transparent, #4fd1c5 50%, transparent)',
-                zIndex: 10,
-              }}
-              onMouseDown={(e) => {
-                queryPanelResizing.current = true;
-                resizeStartY.current = e.clientY;
-                resizeStartHeight.current = queryPanelHeight;
-                e.preventDefault();
-              }}
-            />
+            {/* Vertical Resize Handle - Hidden on mobile */}
+            {!isMobile && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  left: 0,
+                  right: 0,
+                  height: 8,
+                  cursor: 'ns-resize',
+                  background: 'linear-gradient(to bottom, transparent, #4fd1c5 50%, transparent)',
+                  zIndex: 10,
+                }}
+                onMouseDown={(e) => {
+                  queryPanelResizing.current = true;
+                  resizeStartY.current = e.clientY;
+                  resizeStartHeight.current = queryPanelHeight;
+                  e.preventDefault();
+                }}
+              />
+            )}
             {/* Query Panel Header */}
             <div
               style={{
@@ -1717,14 +1736,22 @@ function App() {
             </div>
 
             {/* Query Panel Content */}
-            <div style={{ flex: 1, display: 'flex', padding: 16, gap: 16, minHeight: 0 }}>
+            <div style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: isMobile ? 'column' : 'row',
+              padding: isMobile ? 12 : 16, 
+              gap: isMobile ? 12 : 16, 
+              minHeight: 0 
+            }}>
               {/* Left Side - Query Input */}
               <div style={{ 
-                width: `${leftPanelWidth}%`, 
+                width: isMobile ? '100%' : `${leftPanelWidth}%`, 
                 display: 'flex', 
                 flexDirection: 'column', 
                 gap: 12,
-                minWidth: '200px'
+                minWidth: isMobile ? 'auto' : '200px',
+                flex: isMobile ? 'none' : 'initial'
               }}>
                 <div>
                   {/* Query Mode Toggle */}
@@ -1958,28 +1985,31 @@ function App() {
                 </div>
               </div>
 
-              {/* Horizontal Resize Handle */}
-              <div
-                style={{
-                  width: 8,
-                  cursor: 'ew-resize',
-                  background: 'linear-gradient(to right, transparent, #333 50%, transparent)',
-                  flexShrink: 0,
-                }}
-                onMouseDown={(e) => {
-                  horizontalResizing.current = true;
-                  resizeStartX.current = e.clientX;
-                  resizeStartWidth.current = leftPanelWidth;
-                  e.preventDefault();
-                }}
-              />
+              {/* Horizontal Resize Handle - Hidden on mobile */}
+              {!isMobile && (
+                <div
+                  style={{
+                    width: 8,
+                    cursor: 'ew-resize',
+                    background: 'linear-gradient(to right, transparent, #333 50%, transparent)',
+                    flexShrink: 0,
+                  }}
+                  onMouseDown={(e) => {
+                    horizontalResizing.current = true;
+                    resizeStartX.current = e.clientX;
+                    resizeStartWidth.current = leftPanelWidth;
+                    e.preventDefault();
+                  }}
+                />
+              )}
 
               {/* Right Side - Results */}
               <div style={{ 
-                flex: 1,
+                flex: isMobile ? 1 : 1,
                 display: 'flex', 
                 flexDirection: 'column',
-                minWidth: '200px'
+                minWidth: isMobile ? 'auto' : '200px',
+                minHeight: isMobile ? '300px' : 'auto'
               }}>
                 <label style={{ color: '#aaa', fontSize: 14, fontWeight: 500, marginBottom: 8 }}>
                   Query Results:
