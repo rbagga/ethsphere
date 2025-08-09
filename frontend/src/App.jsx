@@ -1230,41 +1230,42 @@ function App() {
             </div>
           </div>
         )}
-        {/* Transaction speed slider at bottom center of page, fixed and draggable - Hidden on mobile */}
-        {!isMobile && (
+        {/* Transaction speed slider - responsive for mobile and desktop */}
         <div
           style={{
             position: 'fixed',
-            left: sliderPos.x,
-            top: sliderPos.y,
+            left: isMobile ? 12 : sliderPos.x,
+            top: isMobile ? 'auto' : sliderPos.y,
+            bottom: isMobile ? 12 : 'auto',
+            right: isMobile ? 12 : 'auto',
             zIndex: 100,
             background: '#181818',
             borderRadius: 12,
             boxShadow: '0 2px 12px #000a',
-            padding: '18px 32px 14px 32px',
-            minWidth: 320,
-            maxWidth: 480,
+            padding: isMobile ? '12px 16px 10px 16px' : '18px 32px 14px 32px',
+            minWidth: isMobile ? 'auto' : 320,
+            maxWidth: isMobile ? 'none' : 480,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             border: '1px solid #222',
-            cursor: sliderDragging.current ? 'grabbing' : 'grab',
+            cursor: isMobile ? 'default' : (sliderDragging.current ? 'grabbing' : 'grab'),
             userSelect: 'none',
           }}
           onMouseDown={e => {
-            // Only drag if not clicking the slider input
-            if (e.target.tagName === 'INPUT') return;
+            // Only allow dragging on desktop, not mobile
+            if (isMobile || e.target.tagName === 'INPUT') return;
             sliderDragging.current = true;
-            setSliderDraggingState(true); // NEW: update state
+            setSliderDraggingState(true);
             sliderDragOffset.current = {
               x: e.clientX - sliderPos.x,
               y: e.clientY - sliderPos.y,
             };
           }}
         >
-          <div style={{ width: '60%', height: 1, background: '#222', margin: '0 auto 14px auto', borderRadius: 1 }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-            <span style={{ fontSize: 12, color: '#aaa' }}>Slower</span>
+          {!isMobile && <div style={{ width: '60%', height: 1, background: '#222', margin: '0 auto 14px auto', borderRadius: 1 }} />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8, width: '100%' }}>
+            <span style={{ fontSize: isMobile ? 10 : 12, color: '#aaa' }}>Slow</span>
             <input
               type="range"
               min={5}
@@ -1272,13 +1273,22 @@ function App() {
               step={5}
               value={3000 - (txSpeed - 5)}
               onChange={e => setTxSpeed(3000 - (Number(e.target.value) - 5))}
-              style={{ flex: 1 }}
+              style={{ 
+                flex: 1,
+                height: isMobile ? '20px' : 'auto'
+              }}
             />
-            <span style={{ fontSize: 12, color: '#aaa' }}>Faster</span>
-            <span style={{ fontSize: 12, color: '#4fd1c5', minWidth: 48, textAlign: 'right' }}>{txSpeed} ms</span>
+            <span style={{ fontSize: isMobile ? 10 : 12, color: '#aaa' }}>Fast</span>
+            <span style={{ 
+              fontSize: isMobile ? 10 : 12, 
+              color: '#4fd1c5', 
+              minWidth: isMobile ? 40 : 48, 
+              textAlign: 'right' 
+            }}>
+              {txSpeed}ms
+            </span>
           </div>
         </div>
-        )}
         {/* Piano widget, draggable - Hidden on mobile */}
         {!isMobile && (
         <div
