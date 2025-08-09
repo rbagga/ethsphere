@@ -4,6 +4,7 @@
   "description": "🌐 Real-time 3D Ethereum transaction visualizer with AI-powered natural language SQL queries",
   "main": "backend/server.js",
   "scripts": {
+    "build": "cd backend && npm install",
     "start": "cd backend && npm start",
     "dev": "cd backend && npm start"
   },
