@@ -53,6 +53,11 @@ class EthsphereApp {
           return callback(null, true);
         }
         
+        // Allow Vercel deployments (they have vercel.app in domain)
+        if (origin && origin.includes('vercel.app')) {
+          return callback(null, true);
+        }
+        
         // In production, be more strict
         if (process.env.NODE_ENV === 'production') {
           return callback(new Error('Not allowed by CORS'), false);
