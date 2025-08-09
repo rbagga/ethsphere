@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.29.1-dev132.0",
+    "react-transition-group": "^4.4.5",
+    "tone": "^15.1.22"
+  }
+}
