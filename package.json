@@ -5,22 +5,10 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "cd backend && npm start",
-    "install-backend": "cd backend && npm install",
-    "install-frontend": "cd frontend && npm install",
-    "build-frontend": "cd frontend && npm run build",
-    "dev": "concurrently \"cd backend && npm start\" \"cd frontend && npm run dev\"",
-    "postinstall": "npm run install-backend && npm run install-frontend"
+    "dev": "cd backend && npm start"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@duckdb/duckdb-wasm": "^1.29.1-dev132.0",
-    "react-transition-group": "^4.4.5",
-    "tone": "^15.1.22"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
   },
   "keywords": ["ethereum", "blockchain", "3d-visualization", "ai", "sql", "duckdb"],
   "author": "rbagga",
