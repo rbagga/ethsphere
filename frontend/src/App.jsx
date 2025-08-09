@@ -485,20 +485,14 @@ function App() {
       if (isNewFrom) {
         setTwinkle({ address: data.from, pos: fromPos, type: 'from' });
         await new Promise(res => setTimeout(res, txSpeed));
-        // Fetch balance for new address
-        let balance = null;
-        try {
-          const res = await fetch(`${config.API_BASE_URL}/balance/${data.from}`);
-          const result = await res.json();
-          if (result.balance) balance = result.balance;
-        } catch {}
-        setPoints(prev => prev.some(p => p.address === data.from) ? prev : [...prev, { address: data.from, pos: fromPos, balance, color: randomColor() }]);
+        // Add address without balance (defer balance fetch to explore mode)
+        setPoints(prev => prev.some(p => p.address === data.from) ? prev : [...prev, { address: data.from, pos: fromPos, balance: null, color: randomColor() }]);
         setTwinkle(null);
       }
       // 2. Trailblaze for the transaction line
       const txColor = hashToColor(hash);
-      const amount = data.value;
-      setTrail({ fromPos, toPos, color: txColor, progress: 0, amount });
+      // Don't pass amount to trail during animation (defer to explore mode)
+      setTrail({ fromPos, toPos, color: txColor, progress: 0 });
       // Animate trailblaze
       await new Promise(res => {
         let start = null;
@@ -512,7 +506,8 @@ function App() {
         }
         requestAnimationFrame(animateTrail);
       });
-      setVisualized(prev => prev.some(v => v.hash === hash) ? prev : [...prev, { from: data.from, to: data.to, fromPos, toPos, hash, color: txColor, amount }]);
+      // Store transaction without amount initially (defer to explore mode)
+      setVisualized(prev => prev.some(v => v.hash === hash) ? prev : [...prev, { from: data.from, to: data.to, fromPos, toPos, hash, color: txColor, amount: null }]);
       setTrail(null);
       // After visualizing the transaction, play a random arpeggio note with pedal effect
       if (samplerRef.current) {
@@ -530,14 +525,8 @@ function App() {
       if (isNewTo) {
         setTwinkle({ address: data.to, pos: toPos, type: 'to' });
         await new Promise(res => setTimeout(res, txSpeed));
-        // Fetch balance for new address
-        let balance = null;
-        try {
-          const res = await fetch(`${config.API_BASE_URL}/balance/${data.to}`);
-          const result = await res.json();
-          if (result.balance) balance = result.balance;
-        } catch {}
-        setPoints(prev => prev.some(p => p.address === data.to) ? prev : [...prev, { address: data.to, pos: toPos, balance, color: randomColor() }]);
+        // Add address without balance (defer balance fetch to explore mode)
+        setPoints(prev => prev.some(p => p.address === data.to) ? prev : [...prev, { address: data.to, pos: toPos, balance: null, color: randomColor() }]);
         setTwinkle(null);
       }
       setAnimating(false);
@@ -624,6 +613,50 @@ function App() {
     } finally {
       setNlConverting(false);
     }
+  }
+
+  // Fetch balance for an address (used in explore mode)
+  async function fetchAddressBalance(address) {
+    try {
+      const res = await fetch(`${config.API_BASE_URL}/balance/${address}`);
+      const result = await res.json();
+      if (result.balance) {
+        // Update the points array with the fetched balance
+        setPoints(prev => prev.map(p => 
+          p.address === address ? { ...p, balance: result.balance } : p
+        ));
+        return result.balance;
+      }
+    } catch (error) {
+      console.error(`Failed to fetch balance for ${address}:`, error);
+      // Update the points array to mark balance as 'error'
+      setPoints(prev => prev.map(p => 
+        p.address === address ? { ...p, balance: 'error' } : p
+      ));
+    }
+    return null;
+  }
+
+  // Fetch transaction details (used in explore mode)
+  async function fetchTransactionDetails(hash) {
+    try {
+      const res = await fetch(`${config.API_BASE_URL}/tx/${hash}`);
+      const result = await res.json();
+      if (result && result.value) {
+        // Update the visualized array with the transaction amount
+        setVisualized(prev => prev.map(v => 
+          v.hash === hash ? { ...v, amount: result.value } : v
+        ));
+        return result.value;
+      }
+    } catch (error) {
+      console.error(`Failed to fetch transaction details for ${hash}:`, error);
+      // Update the visualized array to mark amount as 'error'
+      setVisualized(prev => prev.map(v => 
+        v.hash === hash ? { ...v, amount: 'error' } : v
+      ));
+    }
+    return null;
   }
 
   // Query execution handler
@@ -1044,7 +1077,46 @@ function App() {
                     window.open(`https://etherscan.io/address/${address}`, '_blank', 'noopener');
                   } else {
                     e.stopPropagation();
+                    const wasSelected = selectedAddress === address;
                     setSelectedAddress(a => (a === address ? null : address));
+                    
+                    // If entering explore mode (clicking on new address), fetch details for this address and connected data
+                    if (!wasSelected && selectedAddress !== address) {
+                      // Fetch balance for the clicked address if not already fetched
+                      const clickedPoint = points.find(p => p.address === address);
+                      if (clickedPoint && clickedPoint.balance === null) {
+                        fetchAddressBalance(address);
+                      }
+                      
+                      // Fetch balances and transaction details for all connected addresses and transactions
+                      const connectedAddresses = new Set();
+                      const connectedTransactions = new Set();
+                      
+                      visualized.forEach(v => {
+                        if (v.from === address || v.to === address) {
+                          // This transaction is connected to the selected address
+                          connectedTransactions.add(v.hash);
+                          if (v.from === address && v.to !== address) connectedAddresses.add(v.to);
+                          if (v.to === address && v.from !== address) connectedAddresses.add(v.from);
+                        }
+                      });
+                      
+                      // Fetch balances for connected addresses
+                      connectedAddresses.forEach(connectedAddress => {
+                        const connectedPoint = points.find(p => p.address === connectedAddress);
+                        if (connectedPoint && connectedPoint.balance === null) {
+                          fetchAddressBalance(connectedAddress);
+                        }
+                      });
+                      
+                      // Fetch transaction details for connected transactions
+                      connectedTransactions.forEach(txHash => {
+                        const transaction = visualized.find(v => v.hash === txHash);
+                        if (transaction && transaction.amount === null) {
+                          fetchTransactionDetails(txHash);
+                        }
+                      });
+                    }
                   }
                 }}
                 // Make selected address larger
@@ -1194,7 +1266,8 @@ function App() {
                 (() => {
                   const point = points.find(p => p.address === hoveredAddress);
                   if (!point) return 'Loading...';
-                  if (!point.balance) return 'Error';
+                  if (point.balance === null) return 'Loading...';
+                  if (point.balance === 'error') return 'Error loading balance';
                   return `${formatEther(point.balance)} ETH`;
                 })()
               }
@@ -1226,7 +1299,14 @@ function App() {
               Cmd+Click (Mac) or Ctrl+Click (Win/Linux) the cylinder to open in Etherscan
             </div>
             <div>
-              Amount: {hoveredTx.amount && hoveredTx.amount.hex ? `${formatEther(BigInt(hoveredTx.amount.hex))} ETH` : 'N/A'}
+              Amount: {
+                (() => {
+                  if (!hoveredTx.amount) return 'Loading...';
+                  if (hoveredTx.amount === 'error') return 'Error loading amount';
+                  if (hoveredTx.amount.hex) return `${formatEther(BigInt(hoveredTx.amount.hex))} ETH`;
+                  return 'N/A';
+                })()
+              }
             </div>
           </div>
         )}
