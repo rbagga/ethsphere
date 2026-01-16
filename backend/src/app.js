@@ -46,31 +46,38 @@ class EthsphereApp {
     // Configure CORS based on environment
     const corsOptions = {
       origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
+        // Allow requests with no origin (mobile apps, curl, Postman, healthchecks)
         if (!origin) return callback(null, true);
-        
+
+        // Explicitly allowed list from config
         if (config.allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
-        
-        // Allow Vercel deployments (they have vercel.app in domain)
-        if (origin && origin.includes('vercel.app')) {
+
+        // Allow Vercel deployments (e.g., *.vercel.app)
+        if (origin.includes('vercel.app')) {
           return callback(null, true);
         }
-        
-        // In production, be more strict
+
+        // Allow common preview deploy patterns if configured via env later
+        // Otherwise, in production, block unknown origins
         if (process.env.NODE_ENV === 'production') {
+          console.warn(`[CORS] Blocked origin: ${origin}`);
           return callback(new Error('Not allowed by CORS'), false);
         }
-        
+
         // In development, allow all origins
         return callback(null, true);
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      optionsSuccessStatus: 204,
     };
     
+    // Handle preflight requests
+    this.app.options('*', cors(corsOptions));
+    // Apply CORS for all routes
     this.app.use(cors(corsOptions));
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));

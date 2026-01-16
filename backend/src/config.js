@@ -25,7 +25,16 @@ const config = {
   
   // CORS and frontend configuration
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
-  allowedOrigins: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000'],
+  // Add common production hosts by default; can be overridden via ALLOWED_ORIGINS
+  allowedOrigins: process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://ethsphere.vercel.app',
+        // These are broad hints; matching is handled in app.js (vercel.app substring)
+        'https://ethsphere-production.up.railway.app'
+      ],
   
   // Security configuration
   encryptionKey: process.env.ENCRYPTION_KEY,
