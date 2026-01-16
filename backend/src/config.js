@@ -9,9 +9,14 @@ const config = {
   network: process.env.ETHEREUM_NETWORK || 'mainnet',
   
   // Transaction processing configuration
-  stackCapacity: parseInt(process.env.STACK_CAPACITY) || 20000,
-  stackResumeThreshold: parseInt(process.env.STACK_RESUME_THRESHOLD) || 5000,
-  fetchIntervalMs: parseInt(process.env.FETCH_INTERVAL_MS) || 1000,
+  // Lower defaults to reduce memory footprint on small instances
+  stackCapacity: parseInt(process.env.STACK_CAPACITY) || 5000,
+  stackResumeThreshold: parseInt(process.env.STACK_RESUME_THRESHOLD) || 1000,
+  fetchIntervalMs: parseInt(process.env.FETCH_INTERVAL_MS) || 3000,
+
+  // Database retention/pruning
+  maxDbRows: parseInt(process.env.MAX_DB_ROWS) || 10000,
+  pruneIntervalMs: parseInt(process.env.PRUNE_INTERVAL_MS) || 60000,
   
   // Database configuration
   databasePath: process.env.DATABASE_PATH || './data/transactions.duckdb',

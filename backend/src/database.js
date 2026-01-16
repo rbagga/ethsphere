@@ -61,6 +61,29 @@ class TransactionDatabase {
     });
   }
 
+  // Keep only the most recent N rows to limit memory/disk usage
+  async pruneOldTransactions(maxRows) {
+    const pruneSQL = `
+      DELETE FROM transactions
+      WHERE created_at < (
+        SELECT MIN(created_at) FROM (
+          SELECT created_at FROM transactions
+          ORDER BY created_at DESC
+          LIMIT ?
+        )
+      );
+    `;
+
+    return new Promise((resolve, reject) => {
+      this.conn.run(pruneSQL, maxRows, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+  }
+
   async insertTransaction(tx) {
     const insertSQL = `
       INSERT OR REPLACE INTO transactions 

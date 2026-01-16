@@ -32,6 +32,18 @@ class EthsphereApp {
       // Setup error handling
       this.setupErrorHandling();
 
+      // Schedule periodic database pruning to bound storage
+      if (config.maxDbRows && config.pruneIntervalMs) {
+        console.log(`Enabling DB pruning: keep last ${config.maxDbRows} rows every ${config.pruneIntervalMs}ms`);
+        this.pruneInterval = setInterval(async () => {
+          try {
+            await this.database.pruneOldTransactions(config.maxDbRows);
+          } catch (err) {
+            console.warn('DB prune failed:', err.message);
+          }
+        }, config.pruneIntervalMs);
+      }
+
       // Start blockchain fetching
       this.blockchainService.startFetching();
 
@@ -155,6 +167,11 @@ class EthsphereApp {
     
     if (this.blockchainService) {
       this.blockchainService.stopFetching();
+    }
+
+    if (this.pruneInterval) {
+      clearInterval(this.pruneInterval);
+      this.pruneInterval = null;
     }
     
     if (this.database) {

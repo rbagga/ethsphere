@@ -76,7 +76,8 @@ class BlockchainService {
         gasPrice: tx.gasPrice || '0',
         gasLimit: tx.gasLimit || 0,
         nonce: tx.nonce || 0,
-        data: tx.data || ''
+        // Avoid storing full calldata to reduce memory/disk usage
+        data: ''
       }));
       
       // Add to database
