@@ -75,8 +75,8 @@ class EthsphereApp {
       optionsSuccessStatus: 204,
     };
     
-    // Handle preflight requests
-    this.app.options('*', cors(corsOptions));
+    // Handle preflight requests (Express 5 requires regex, '*' is invalid)
+    this.app.options(/.*/, cors(corsOptions));
     // Apply CORS for all routes
     this.app.use(cors(corsOptions));
     this.app.use(express.json({ limit: '10mb' }));
